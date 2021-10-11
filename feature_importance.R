@@ -107,7 +107,7 @@ str(data)
 
 sensor = "S1-S2"           # S1, S2
 band = "VH-NDVI"       # S1: VV, VH; S2: B01, B02, B03, B04, B05, B06, B07, B08, B11, B12, B8A, NDVI
-feature = "min-max"            # S1: min, max, mean; S2: min, max, median, avg
+feature = "median"            # S1: min, max, mean; S2: min, max, median, avg
 startmonth = 1             # 1 - 12
 endmonth = 12              # 1 - 12
 
@@ -151,7 +151,7 @@ data_filtered = na.omit(data_filtered)
 ################################################################################
 
 # reduce dataframe to less rows for testing
-data_filtered = data_filtered[0:5000,]
+# data_filtered = data_filtered[0:5000,]
 
 # set seed for comparison
 set.seed(4858)
