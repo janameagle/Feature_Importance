@@ -33,7 +33,7 @@ getwd()
 # setwd('enter your working directory here')
 
 data_raw <- read.csv("data/STR3_Data_Extraction_v11.csv")
-
+file <- "v11" # used to mark output files
 
 
 ################################################################################
@@ -166,7 +166,43 @@ plot(ive_rf, show_predicted = FALSE, bar_width = 4)
 
 
 # filtered
-ive_rf_filtered <- ive_rf[ive_rf$`_ylevel_` == 20, ]
-shapper:::plot.individual_variable_effect(ive_rf_filtered)
+
+ive_rf_20 <- ive_rf[ive_rf$`_ylevel_` == 20, ]
+ive_rf_30 <- ive_rf[ive_rf$`_ylevel_` == 30, ]
+ive_rf_42 <- ive_rf[ive_rf$`_ylevel_` == 42, ]
+ive_rf_52 <- ive_rf[ive_rf$`_ylevel_` == 52, ]
+
+p20 <- shapper:::plot.individual_variable_effect(ive_rf_20, bar_width = 4)
+p30 <- shapper:::plot.individual_variable_effect(ive_rf_30)
+p42 <- shapper:::plot.individual_variable_effect(ive_rf_42)
+p52 <- shapper:::plot.individual_variable_effect(ive_rf_52)
+
+library(cowplot)
+plot_grid(p20, p30, p42, p52, labels = c('A', 'B'), ncol = 2, label_size = 12)
+
+
+
+################################################################################
+
+# export results
+
+################################################################################
+
+i = 23
+for (i in levels(data$aux_vector_CODE)){
+  ive_rf_i <- ive_rf[ive_rf$`_ylevel_` == i, ]
+  plot_i <- shapper:::plot.individual_variable_effect(ive_rf_i, bar_width = 4)
+  assign(paste0("p", i), plot_i)
+}
+
+# create graph from output and export
+pdf(paste0("SHAP_output/", file, "_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 8.3, height = 11.7)
+  plot_grid(p10, p20, p21, ncol = 1, label_size = 12)
+  plot_grid(p22, p23, p24, ncol = 1, label_size = 12)
+  plot_grid(p25, p30, p41, ncol = 1, label_size = 12)
+  plot_grid(p42, p51, p52, ncol = 1, label_size = 12)
+  plot_grid(p52, p60, p70, ncol = 1, label_size = 12)
+  plot_grid(p80, p90, p100, ncol = 1, label_size = 12)
+dev.off()
 
 
