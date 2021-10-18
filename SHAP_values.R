@@ -17,16 +17,16 @@
 ################################################################################
 
 # load needed libraries
-devtools::install_github('ModelOriented/treeshap')
 
-library(xgboost)
+#library(xgboost)
 library(randomForest)
 library(stringr)
 library(lubridate)
-library(treeshap)
-source("shap.R")
+library(cowplot)
 library(shapper)
-install_shap()
+#library(ggforce)
+#source("shap.R")
+#install_shap()
 
 
 getwd()
@@ -101,9 +101,9 @@ str(data)
 # define your values of interest
 # if choosing several of one type, add them like x1-x2-x3, without a space between
 
-sensor = "S1"           # S1, S2
+sensor = "S1-S2"           # S1, S2
 band = "VH"       # S1: VV, VH; S2: B01, B02, B03, B04, B05, B06, B07, B08, B11, B12, B8A, NDVI
-feature = "mean"            # S1: min, max, mean; S2: min, max, median, avg
+feature = "mean-min-max"            # S1: min, max, mean; S2: min, max, median, avg
 startmonth = 1             # 1 - 12
 endmonth = 12              # 1 - 12
 
@@ -165,20 +165,8 @@ ive_rf
 plot(ive_rf, show_predicted = FALSE, bar_width = 4)
 
 
-# filtered
-
 ive_rf_20 <- ive_rf[ive_rf$`_ylevel_` == 20, ]
-ive_rf_30 <- ive_rf[ive_rf$`_ylevel_` == 30, ]
-ive_rf_42 <- ive_rf[ive_rf$`_ylevel_` == 42, ]
-ive_rf_52 <- ive_rf[ive_rf$`_ylevel_` == 52, ]
-
-p20 <- shapper:::plot.individual_variable_effect(ive_rf_20, bar_width = 4)
-p30 <- shapper:::plot.individual_variable_effect(ive_rf_30)
-p42 <- shapper:::plot.individual_variable_effect(ive_rf_42)
-p52 <- shapper:::plot.individual_variable_effect(ive_rf_52)
-
-library(cowplot)
-plot_grid(p20, p30, p42, p52, labels = c('A', 'B'), ncol = 2, label_size = 12)
+shapper:::plot.individual_variable_effect(ive_rf_20, bar_width = 4)
 
 
 
@@ -188,7 +176,6 @@ plot_grid(p20, p30, p42, p52, labels = c('A', 'B'), ncol = 2, label_size = 12)
 
 ################################################################################
 
-i = 23
 for (i in levels(data$aux_vector_CODE)){
   ive_rf_i <- ive_rf[ive_rf$`_ylevel_` == i, ]
   plot_i <- shapper:::plot.individual_variable_effect(ive_rf_i, bar_width = 4)
@@ -197,12 +184,69 @@ for (i in levels(data$aux_vector_CODE)){
 
 # create graph from output and export
 pdf(paste0("SHAP_output/", file, "_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 8.3, height = 11.7)
-  plot_grid(p10, p20, p21, ncol = 1, label_size = 12)
-  plot_grid(p22, p23, p24, ncol = 1, label_size = 12)
-  plot_grid(p25, p30, p41, ncol = 1, label_size = 12)
-  plot_grid(p42, p51, p52, ncol = 1, label_size = 12)
-  plot_grid(p52, p60, p70, ncol = 1, label_size = 12)
-  plot_grid(p80, p90, p100, ncol = 1, label_size = 12)
+  if(length(unique(ive_rf[, '_vname_'])) <= 24) { # define number of plots per page for good readability
+      plot_grid(p10, p20, p21, ncol = 1, label_size = 12)
+      plot_grid(p22, p23, p24, ncol = 1, label_size = 12)
+      plot_grid(p25, p30, p41, ncol = 1, label_size = 12)
+      plot_grid(p42, p51, p52, ncol = 1, label_size = 12)
+      plot_grid(p52, p60, p70, ncol = 1, label_size = 12)
+      plot_grid(p80, p90, p100, ncol = 1, label_size = 12)
+  
+    } else if(length(unique(ive_rf[, '_vname_'])) <= 40) {
+      plot_grid(p10, p20, ncol = 1, label_size = 12)
+      plot_grid(p21, p22, ncol = 1, label_size = 12)
+      plot_grid(p23, p24, ncol = 1, label_size = 12)
+      plot_grid(p25, p30, ncol = 1, label_size = 12)
+      plot_grid(p41, p42, ncol = 1, label_size = 12)
+      plot_grid(p51, p52, ncol = 1, label_size = 12)
+      plot_grid(p52, p60, ncol = 1, label_size = 12)
+      plot_grid(p70, p80, ncol = 1, label_size = 12)
+      plot_grid(p90, p100, ncol = 1, label_size = 12)
+  
+    } else {
+      plot_grid(p10, ncol = 1, label_size = 12)
+      plot_grid(p20, ncol = 1, label_size = 12)
+      plot_grid(p22, ncol = 1, label_size = 12)
+      plot_grid(p23, ncol = 1, label_size = 12)
+      plot_grid(p24, ncol = 1, label_size = 12)
+      plot_grid(p25, ncol = 1, label_size = 12)
+      plot_grid(p30, ncol = 1, label_size = 12)
+      plot_grid(p41, ncol = 1, label_size = 12)
+      plot_grid(p42, ncol = 1, label_size = 12)
+      plot_grid(p51, ncol = 1, label_size = 12)
+      plot_grid(p52, ncol = 1, label_size = 12)
+      plot_grid(p60, ncol = 1, label_size = 12)
+      plot_grid(p70, ncol = 1, label_size = 12)
+      plot_grid(p80, ncol = 1, label_size = 12)
+      plot_grid(p90, ncol = 1, label_size = 12)
+      plot_grid(p100, ncol = 1, label_size = 12)
+  }
 dev.off()
 
 
+
+
+################################################################################
+## point plot
+
+ggplot(data = ive_rf) +
+  coord_flip() + 
+  # sina plot: 
+  geom_sina(aes(x = ive_rf[,"_vname_"], y = ive_rf[, '_yhat_mean_'] + pmax(ive_rf[, '_attribution_'], 0), color = ive_rf[,'_sign_'])) +
+  # print the mean absolute value: 
+  geom_text(data = unique(ive_rf[, c("_vname_", "_yhat_mean_")]),
+            aes(x = ive_rf[,"_vname_"], y=-Inf, label = round(ive_rf[,"_yhat_mean_"],3)),
+            hjust = -0.2) + # bold
+  # # add a "SHAP" bar notation
+  # annotate("text", x = -Inf, y = -Inf, vjust = -0.2, hjust = 0, size = 3,
+  #          label = expression(group("|", bar(SHAP), "|"))) + 
+  #scale_color_discrete(low="#FFCC33", high="#6600CC", 
+  #                     breaks=c(0,1), labels=c("Low","High")) 
+  theme_bw() +
+  theme(axis.line.y = element_blank(), axis.ticks.y = element_blank(), # remove axis line
+        legend.position="bottom") +
+  labs(y = "SHAP value (impact on model output)", x = "", color = "Feature value") +
+  # reverse the order of features
+  scale_x_discrete(limits = rev(levels(ive_rf[, '_yhat_mean_']))) +
+  geom_hline(yintercept = 0) +  # the vertical line
+  scale_y_continuous(limits = c(-max(abs(ive_rf[, '_yhat_mean_'])), max(abs(ive_rf[, '_yhat_mean_'])))) 
