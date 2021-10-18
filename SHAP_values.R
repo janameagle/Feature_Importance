@@ -25,7 +25,7 @@ library(lubridate)
 library(cowplot)
 library(shapper)
 #library(ggforce)
-#source("shap.R")
+source("shap.R")
 #install_shap()
 
 
@@ -158,15 +158,17 @@ predict(data_rf)
 
 # shapper
 library("DALEX")
+# create an explainer of the random forest element
 exp_rf <- explain(data_rf, data = data_filtered[,1:ncol(data_filtered)-1])
 
-ive_rf <- shap(exp_rf, new_observation = data_filtered[1,1:ncol(data_filtered)-1])
+# get the individual variable effect
+# new_observation is the observation to be analyzed
+ive_rf <- shap(explain, new_observation = data_filtered[1,1:ncol(data_filtered)-1])
 ive_rf
-plot(ive_rf, show_predicted = FALSE, bar_width = 4)
 
-
-ive_rf_20 <- ive_rf[ive_rf$`_ylevel_` == 20, ]
-shapper:::plot.individual_variable_effect(ive_rf_20, bar_width = 4)
+# uncomment to see an example for class 20
+#ive_rf_20 <- ive_rf[ive_rf$`_ylevel_` == 20, ]
+#shapper:::plot.individual_variable_effect(ive_rf_20, bar_width = 4)
 
 
 
@@ -182,28 +184,34 @@ for (i in levels(data$aux_vector_CODE)){
   assign(paste0("p", i), plot_i)
 }
 
+nplots <- length(unique(ive_rf[, '_vname_']))
+
 # create graph from output and export
-pdf(paste0("SHAP_output/", file, "_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 8.3, height = 11.7)
-  if(length(unique(ive_rf[, '_vname_'])) <= 24) { # define number of plots per page for good readability
+# depending on nplots a different number of plots fit on one PDF page
+# multiple pdfs are created and deleted conditionally due to issues in conditional creation
+pdf(paste0("SHAP_output/", file, "_s_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 8.3, height = 11.7)
       plot_grid(p10, p20, p21, ncol = 1, label_size = 12)
       plot_grid(p22, p23, p24, ncol = 1, label_size = 12)
       plot_grid(p25, p30, p41, ncol = 1, label_size = 12)
       plot_grid(p42, p51, p52, ncol = 1, label_size = 12)
-      plot_grid(p52, p60, p70, ncol = 1, label_size = 12)
+      plot_grid(p53, p60, p70, ncol = 1, label_size = 12)
       plot_grid(p80, p90, p100, ncol = 1, label_size = 12)
+dev.off()
+
   
-    } else if(length(unique(ive_rf[, '_vname_'])) <= 40) {
+pdf(paste0("SHAP_output/", file, "_m_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 8.3, height = 11.7)
       plot_grid(p10, p20, ncol = 1, label_size = 12)
       plot_grid(p21, p22, ncol = 1, label_size = 12)
       plot_grid(p23, p24, ncol = 1, label_size = 12)
       plot_grid(p25, p30, ncol = 1, label_size = 12)
       plot_grid(p41, p42, ncol = 1, label_size = 12)
       plot_grid(p51, p52, ncol = 1, label_size = 12)
-      plot_grid(p52, p60, ncol = 1, label_size = 12)
+      plot_grid(p53, p60, ncol = 1, label_size = 12)
       plot_grid(p70, p80, ncol = 1, label_size = 12)
       plot_grid(p90, p100, ncol = 1, label_size = 12)
+dev.off()
   
-    } else {
+pdf(paste0("SHAP_output/", file, "_l_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 8.3, height = 11.7)
       plot_grid(p10, ncol = 1, label_size = 12)
       plot_grid(p20, ncol = 1, label_size = 12)
       plot_grid(p22, ncol = 1, label_size = 12)
@@ -215,18 +223,53 @@ pdf(paste0("SHAP_output/", file, "_SHAP_", sensor, "_", band, "_", feature, "_",
       plot_grid(p42, ncol = 1, label_size = 12)
       plot_grid(p51, ncol = 1, label_size = 12)
       plot_grid(p52, ncol = 1, label_size = 12)
+      plot_grid(p53, ncol = 1, label_size = 12)
       plot_grid(p60, ncol = 1, label_size = 12)
       plot_grid(p70, ncol = 1, label_size = 12)
       plot_grid(p80, ncol = 1, label_size = 12)
       plot_grid(p90, ncol = 1, label_size = 12)
       plot_grid(p100, ncol = 1, label_size = 12)
-  }
 dev.off()
 
 
-
+# depending on nplots, the unaesthetic files are deleted, only one with good readability will remain
+if(nplots <= 24) { # define number of plots per page for good readability
+  file.remove(paste0("SHAP_output/", file, "_m_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"))
+  file.remove(paste0("SHAP_output/", file, "_l_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"))
+} else if(nplots <= 40) {
+  file.remove(paste0("SHAP_output/", file, "_s_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"))
+  file.remove(paste0("SHAP_output/", file, "_l_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"))
+} else {
+  file.remove(paste0("SHAP_output/", file, "_s_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"))
+  file.remove(paste0("SHAP_output/", file, "_m_SHAP_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"))
+}
 
 ################################################################################
+# point plot
+shap_values=predict(data_rf, data_filtered, predcontrib = TRUE, approxcontrib = F)
+
+## Calculate shap values
+shap_result = shap.score.rank(xgb_model = data_rf, 
+                                   X_train =bike_x,
+                                   shap_approx = F
+)
+
+# `shap_approx` comes from `approxcontrib` from xgboost documentation. 
+# Faster but less accurate if true. Read more: help(xgboost)
+
+## Plot var importance based on SHAP
+var_importance(shap_result_bike, top_n=10)
+
+## Prepare data for top N variables
+shap_long_bike = shap.prep(shap = shap_result_bike,
+                           X_train = bike_x , 
+                           top_n = 10
+)
+
+plot.shap.summary(data_long = shap_long_bike)
+
+
+
 ## point plot
 
 ggplot(data = ive_rf) +
