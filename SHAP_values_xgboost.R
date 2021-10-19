@@ -8,11 +8,10 @@
 #                                                                              #
 # Input: A matrix with temporal spectral features should be in a folder 'data' #
 #                                                                              #
-# Output: The matrix with the impurity measures in form of a xlsx file         #
-#         A barplot showing the importance for each selected feature           #
-#         A barplot showing the importance for each selected feature in        #
-#             ascending order                                                  #
-#         All outputs will be saved in the 'output' folder                     #
+# Output: A summary point plot of the shap values per feature, all features    #
+#         A summary point plot of the shap values per feature, top features    #
+#         A dependence plot for top features                                   #
+#         All outputs will be saved in the 'SHAP_output' folder                #
 #                                                                              #
 #                                                                              #
 # Souce: Code and instruction are taken from                                   #
@@ -198,7 +197,7 @@ shap_long <- shap.prep(shap_contrib = shap_values_data, X_train = dtrain)
 
 # **SHAP summary plot**
 # shap.plot.summary(shap_long, scientific = FALSE)
-#shap.plot.summary(shap_long, x_bound  = 1.5, dilute = 10)
+# shap.plot.summary(shap_long, x_bound  = 3, dilute = 10)
 
 # Alternatives options to make the same plot:
 # option 1: from the xgboost model
@@ -209,6 +208,8 @@ shap_long <- shap.prep(shap_contrib = shap_values_data, X_train = dtrain)
 # shap.plot.summary.wrap2(shap_score = shap_values_data, X = dtrain, top_n = 10)
 
 
+# Dependence plot for each feature
+# xgboost::xgb.plot.shap(data = dtrain, model = mod1, top_n = 9, n_col = 3)
 
 
 ################################################################################
@@ -230,4 +231,11 @@ n_max <- 50 # change, if you want to reduce nr of features plotted
 # shows all features, but maximum 50 (to fit on one page), or maximum your defined n_max
 pdf(paste0("SHAP_output/", file, "_SHAPtop_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 11.7, height = 8.3)
     shap.plot.summary.wrap2(shap_score = shap_values_data, X = dtrain, dilute = 30, top_n = min(50, nfeats, n_max)) # use dilute to reduce nr points plotted
+dev.off()
+
+
+
+# plot dependence plot for top 9 features
+pdf(paste0("SHAP_output/", file, "_SHAPdependence_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 11.7, height = 8.3)
+    xgb.plot.shap(data = dtrain, model = mod1, top_n = 9, n_col = 3)
 dev.off()
