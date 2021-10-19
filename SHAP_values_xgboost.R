@@ -8,7 +8,8 @@
 #                                                                              #
 # Input: A matrix with temporal spectral features should be in a folder 'data' #
 #                                                                              #
-# Output: A summary point plot of the shap values per feature, all features    #
+# Output: The matrix with the SHAP values in form of a xlsx file               #
+#         A summary point plot of the shap values per feature, all features    #
 #         A summary point plot of the shap values per feature, top features    #
 #         A dependence plot for top features                                   #
 #         All outputs will be saved in the 'SHAP_output' folder                #
@@ -29,7 +30,8 @@ library(xgboost)
 library(ggplot2)
 library(stringr)
 library(lubridate)
-#source("SHAPforRandomForest.R")
+library(writexl)
+source("SHAPforRandomForest.R")
 
 
 
@@ -163,13 +165,12 @@ dtrain = as.matrix(select(data_filtered, -aux_vector_CODE))
 params <- list(
   objective = "multi:softmax",     # for classification, not regression
   learning_rate = 1,              # to create a random forest without boosting
-  num_parallel_tree = 500,
+  num_parallel_tree = 200,
   subsample = 0.63,
   colsample_bynode = floor(sqrt(nfeats))/nfeats,
   reg_lambda = 0,
   max_depth = 20,
-  min_child_weight = 2,
-  num_parallel_tree = 200
+  min_child_weight = 2
 )
 
 mod1 = xgboost::xgboost(
@@ -213,11 +214,19 @@ shap_long <- shap.prep(shap_contrib = shap_values_data, X_train = dtrain)
 # xgboost::xgb.plot.shap(data = dtrain, model = mod1, top_n = 9, n_col = 3)
 
 
+
+
 ################################################################################
 
 # export results
 
 ################################################################################
+
+# convert to dataframe for export
+shap_long_df <- as.data.frame(shap_long)
+
+write_xlsx(shap_values_data, path = paste0("SHAP_output/values_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".xlsx"), col_names = TRUE)
+
 
 # long plot shows all features, might have a bad readability
 pdf(paste0("SHAP_output/", file, "_SHAPlong_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 11.7, height = 8.3)
