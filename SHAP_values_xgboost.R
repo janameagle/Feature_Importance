@@ -141,7 +141,8 @@ data_filtered[data_filtered == -9999] <- NA
 data_filtered = na.omit(data_filtered)
 # nrow(data_filtered)
 
-
+# get the number of features remaining
+nfeats <- length(names(data_filtered))
 
 
 ################################################################################
@@ -160,21 +161,21 @@ dtrain = as.matrix(select(data_filtered, -aux_vector_CODE))
 
 
 params <- list(
-  objective = "binary:logistic",  # for classification, not regression
+  objective = "multi:softmax",     # for classification, not regression
   learning_rate = 1,              # to create a random forest without boosting
   num_parallel_tree = 500,
   subsample = 0.63,
-  colsample_bynode = 0.8,
+  colsample_bynode = floor(sqrt(nfeats))/nfeats,
   reg_lambda = 0,
   max_depth = 20,
-  min_child_weight = 2
+  min_child_weight = 2,
+  num_parallel_tree = 200
 )
 
 mod1 = xgboost::xgboost(
   data = dtrain, 
   label = data_filtered$aux_vector_CODE, 
   gamma = 0, 
-  eta = 1,
   lambda = 0, 
   nrounds = 1,                   # to create a random forest without boosting
   verbose = FALSE, 
@@ -224,13 +225,11 @@ pdf(paste0("SHAP_output/", file, "_SHAPlong_", sensor, "_", band, "_", feature, 
 dev.off()
 
 
-# get the number of features for the long plot
-nfeats <- length(names(data_filtered))-1
 n_max <- 50 # change, if you want to reduce nr of features plotted
 
 # shows all features, but maximum 50 (to fit on one page), or maximum your defined n_max
 pdf(paste0("SHAP_output/", file, "_SHAPtop_", sensor, "_", band, "_", feature, "_", startmonth, "-", endmonth, ".pdf"), width = 11.7, height = 8.3)
-    shap.plot.summary.wrap2(shap_score = shap_values_data, X = dtrain, dilute = 30, top_n = min(50, nfeats, n_max)) # use dilute to reduce nr points plotted
+    shap.plot.summary.wrap2(shap_score = shap_values_data, X = dtrain, dilute = 30, top_n = min(50, nfeats-1, n_max)) # use dilute to reduce nr points plotted
 dev.off()
 
 
